@@ -1,7 +1,28 @@
 package graph
 
-import simpleSt "graph/simplestructure"
+import (
+	"fmt"
 
+	simpleSt "graph/simplestructure"
+)
+
+// Determine if a graph is acyclic
+// Using topological sort
+func IsAcyclic(g GraphInterface) error {
+	vertices, err := TopoSort(g)
+	if err != nil {
+		return err
+	}
+
+	if len(vertices) < len(g.Verteces()) {
+		return fmt.Errorf("not acyclic.")
+	}
+
+	return nil
+}
+
+// Graph Topological Sort
+// If this graph is cyclic, the sorted vertices' number is less than the total vertices in grah
 func TopoSort(g GraphInterface) (sortVertexList []VertexInterface, err error) {
 	indgreeMap := make(map[string]int)
 	idQueue := simpleSt.NewSimpleQueue()
