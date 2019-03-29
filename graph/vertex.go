@@ -2,8 +2,10 @@ package graph
 
 import (
 	"fmt"
-	simpleSt "graph/simplestructure"
 	"reflect"
+	"sync"
+
+	simpleSt "graph/simplestructure"
 )
 
 /*****************************************  vertex interface  *****************************************/
@@ -66,6 +68,8 @@ type AbstractVertex struct {
 	edges     simpleSt.SimpleVector
 	indegree  int
 	outdegree int
+	// mutex
+	lock sync.RWMutex
 }
 
 func NewVertex(id string, data interface{}) *AbstractVertex {
@@ -77,46 +81,64 @@ func NewVertex(id string, data interface{}) *AbstractVertex {
 
 // Update vertex type
 func (v *AbstractVertex) SetType(t VertexType) {
+	defer v.lock.Unlock()
+	v.lock.Lock()
 	v.vertexType = t
 }
 
 // Update vertex id
 func (v *AbstractVertex) SetId(id string) {
+	defer v.lock.Unlock()
+	v.lock.Lock()
 	v.id = id
 }
 
 // Update vertex data
 func (v *AbstractVertex) SetData(data interface{}) {
+	defer v.lock.Unlock()
+	v.lock.Lock()
 	v.data = data
 }
 
 // Update vertex state
 func (v *AbstractVertex) SetState(state VertexState) {
+	defer v.lock.Unlock()
+	v.lock.Lock()
 	v.state = state
 }
 
 // get vertex type
 func (v *AbstractVertex) Type() VertexType {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
 	return v.vertexType
 }
 
 // get vertex id
 func (v *AbstractVertex) Id() string {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
 	return v.id
 }
 
 // get vertex data
 func (v *AbstractVertex) Data() interface{} {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
 	return v.data
 }
 
 // get vertex state
 func (v *AbstractVertex) State() VertexState {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
 	return v.state
 }
 
 // vertex behavior set
 func (v *AbstractVertex) SetExecutor(executorFunc ExecutorFunc) {
+	defer v.lock.Unlock()
+	v.lock.Lock()
 	v.executor = executorFunc
 }
 
@@ -131,6 +153,9 @@ func (v *AbstractVertex) Execute(inputs ...interface{}) (interface{}, error) {
 
 // update adjacent vertex
 func (v *AbstractVertex) Adjoin(dst VertexInterface, ei EdgeInterface) {
+	defer v.lock.Unlock()
+	v.lock.Lock()
+
 	ei.SetVertex(dst)
 	v.edges.Pushback(ei)
 	v.incOutdegree()
@@ -143,6 +168,9 @@ func (v *AbstractVertex) SetEdge(dst VertexInterface, ei EdgeInterface) error {
 	if index == -1 {
 		return fmt.Errorf("vertex(%v) not exists.", dst)
 	}
+
+	defer v.lock.Unlock()
+	v.lock.Lock()
 
 	edgeI := v.edges.At(index)
 	edge := edgeI.(EdgeInterface)
@@ -178,6 +206,9 @@ func (v *AbstractVertex) RemoveAdjoin(vi VertexInterface) {
 		return
 	}
 
+	defer v.lock.Unlock()
+	v.lock.Lock()
+
 	v.edges.Remove(index)
 	v.decOutdegree()
 	vi.decIndegree()
@@ -185,6 +216,9 @@ func (v *AbstractVertex) RemoveAdjoin(vi VertexInterface) {
 
 // find adjacent vertex and return its binding edge's index
 func (v *AbstractVertex) FindAdjoinVertex(vi VertexInterface) int {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
+
 	for i, d := range v.edges.Data() {
 		e := d.(EdgeInterface)
 		if reflect.DeepEqual(e.Vertex(), vi) {
@@ -197,6 +231,9 @@ func (v *AbstractVertex) FindAdjoinVertex(vi VertexInterface) int {
 
 // get all edges
 func (v *AbstractVertex) Edges() (ei []EdgeInterface) {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
+
 	for _, d := range v.edges.Data() {
 		ei = append(ei, d.(EdgeInterface))
 	}
@@ -206,10 +243,16 @@ func (v *AbstractVertex) Edges() (ei []EdgeInterface) {
 
 // Indegree
 func (v *AbstractVertex) Indegree() int {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
+
 	return v.indegree
 }
 
 // outdegree
 func (v *AbstractVertex) Outdegree() int {
+	defer v.lock.RUnlock()
+	v.lock.RLock()
+
 	return v.outdegree
 }
