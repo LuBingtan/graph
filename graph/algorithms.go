@@ -2,7 +2,7 @@ package graph
 
 import simpleSt "graph/simplestructure"
 
-func TopoSort(g *AbstractGraph) (sortVertexList []VertexInterface, err error) {
+func TopoSort(g GraphInterface) (sortVertexList []VertexInterface, err error) {
 	indgreeMap := make(map[string]int)
 	idQueue := simpleSt.NewSimpleQueue()
 

@@ -19,7 +19,7 @@ type GraphInterface interface {
 
 	/////// relation data ///////
 	// create
-	InsertVertex(VertexInterface) (index int, err error)
+	InsertVertex(VertexInterface) error
 	InsertEdge(src, dst VertexInterface, ei EdgeInterface) error
 	// read
 	GetVertex(id string) VertexInterface

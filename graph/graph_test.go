@@ -7,7 +7,7 @@ import (
 func GraphPrint(t *testing.T, g *AbstractGraph) {
 	t.Logf("AbstractGraph node number:%d\n", len(g.Verteces()))
 
-	t.Log("=======original=======")
+	t.Log("*****************************original*****************************")
 	for k, v := range g.Verteces() {
 		t.Log("=========Node=========:")
 		t.Log("key:", k)
@@ -24,7 +24,7 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 	if nil != err {
 		t.Error(err)
 	}
-	t.Log("=======sort=======")
+	t.Log("*****************************sort*****************************")
 	for _, v := range vList {
 		t.Log("=========Node=========:")
 		t.Log("id:", v.Id())
@@ -52,10 +52,10 @@ func Test4Graph4Init(t *testing.T) {
 	g.InsertVertex(n2)
 	g.InsertVertex(n3)
 	// add edge
-	g.InsertEdge(n0, n1, NewEdge())
-	g.InsertEdge(n0, n2, NewEdge())
-	g.InsertEdge(n1, n2, NewEdge())
-	g.InsertEdge(n2, n3, NewEdge())
+	g.InsertEdge(n3, n1, NewEdge())
+	g.InsertEdge(n3, n2, NewEdge())
+	g.InsertEdge(n2, n1, NewEdge())
+	g.InsertEdge(n1, n0, NewEdge())
 
 	GraphPrint(t, g)
 }
