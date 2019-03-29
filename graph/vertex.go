@@ -2,7 +2,7 @@ package graph
 
 import (
 	"fmt"
-	simpleSt "fsmgraph-lib/simplestructure"
+	simpleSt "graph/simplestructure"
 	"reflect"
 )
 

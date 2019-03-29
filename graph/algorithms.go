@@ -1,6 +1,6 @@
 package graph
 
-import simpleSt "fsmgraph-lib/simplestructure"
+import simpleSt "graph/simplestructure"
 
 func TopoSort(g *AbstractGraph) (sortVertexList []VertexInterface, err error) {
 	indgreeMap := make(map[string]int)
