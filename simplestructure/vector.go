@@ -1,6 +1,7 @@
 package simplestructure
 
 import (
+	"fmt"
 	"sync"
 	"reflect"
 )
@@ -11,6 +12,7 @@ type Vector interface {
 	Pushback(interface{})
 	Insert(interface{}, int)
 
+	Replace(int, interface{}) error
 	Remove(int) interface{}
 	Popback() interface{}
 	Popfront() interface{}
@@ -68,6 +70,20 @@ func (vec *SimpleVector) Insert(v interface{}, next int) {
 	vec.data = append(vec.data, nil)
 	copy(vec.data[next:], vec.data[next+1:len(vec.data)])
 	vec.data[next] = v
+}
+
+func (vec *SimpleVector) Replace(index int, v interface{}) error {
+	defer vec.lock.Unlock()
+
+	vec.lock.Lock()
+
+	if index > len(vec.data)-1 {
+		return fmt.Errorf("index out of range!")
+	}
+
+	vec.data[index] = v
+
+	return nil
 }
 
 func (vec *SimpleVector) Remove(index int) interface{} {

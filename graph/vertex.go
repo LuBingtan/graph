@@ -37,7 +37,7 @@ type VertexInterface interface {
 	/////// relation data ///////
 	// update
 	Adjoin(dst VertexInterface, ei EdgeInterface)
-	SetEdge(dst VertexInterface, ei EdgeInterface)
+	SetEdge(dst VertexInterface, ei EdgeInterface) error
 	incIndegree()
 	decIndegree()
 	incOutdegree()
@@ -138,9 +138,17 @@ func (v *AbstractVertex) Adjoin(dst VertexInterface, ei EdgeInterface) {
 }
 
 // update edge
-func (v *AbstractVertex) SetEdge(dst VertexInterface, ei EdgeInterface) {
-	v.RemoveAdjoin(dst)
-	v.Adjoin(dst, ei)
+func (v *AbstractVertex) SetEdge(dst VertexInterface, ei EdgeInterface) error {
+	index := v.FindAdjoinVertex(dst)
+	if index == -1 {
+		return fmt.Errorf("vertex(%v) not exists.", dst)
+	}
+
+	edgeI := v.edges.At(index)
+	edge := edgeI.(EdgeInterface)
+	ei.SetVertex(edge.Vertex())
+
+	return v.edges.Replace(index, ei)
 }
 
 // increase indegree
