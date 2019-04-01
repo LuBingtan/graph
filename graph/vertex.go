@@ -23,18 +23,11 @@ type ExecutorFunc func(...interface{}) (interface{}, error)
 type VertexInterface interface {
 	/////// meta data ///////
 	// update
-	SetType(VertexType)
 	SetId(string)
 	SetData(interface{})
-	SetState(VertexState)
 	// read
-	Type() VertexType
 	Id() string
 	Data() interface{}
-	State() VertexState
-	// behavior
-	SetExecutor(ExecutorFunc)
-	Execute(...interface{}) (interface{}, error)
 
 	/////// relation data ///////
 	// update
@@ -62,7 +55,6 @@ type AbstractVertex struct {
 	vertexType VertexType
 	id         string
 	data       interface{}
-	state      VertexState
 	executor   ExecutorFunc
 	// graph data
 	edges     simpleSt.SimpleVector
@@ -100,13 +92,6 @@ func (v *AbstractVertex) SetData(data interface{}) {
 	v.data = data
 }
 
-// Update vertex state
-func (v *AbstractVertex) SetState(state VertexState) {
-	defer v.mutex.Unlock()
-	v.mutex.Lock()
-	v.state = state
-}
-
 // get vertex type
 func (v *AbstractVertex) Type() VertexType {
 	defer v.mutex.RUnlock()
@@ -126,13 +111,6 @@ func (v *AbstractVertex) Data() interface{} {
 	defer v.mutex.RUnlock()
 	v.mutex.RLock()
 	return v.data
-}
-
-// get vertex state
-func (v *AbstractVertex) State() VertexState {
-	defer v.mutex.RUnlock()
-	v.mutex.RLock()
-	return v.state
 }
 
 // vertex behavior set

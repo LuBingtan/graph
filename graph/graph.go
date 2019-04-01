@@ -15,10 +15,8 @@ type GraphInterface interface {
 	/////// meta data ///////
 	// update
 	SetName(string)
-	SetType(GraphType)
 	// read
 	Name() string
-	Type() GraphType
 
 	/////// relation data ///////
 	// create
@@ -38,7 +36,6 @@ type GraphInterface interface {
 /*****************************************  graph struct  *****************************************/
 type AbstractGraph struct {
 	name      string
-	graphType GraphType
 	verteces  map[string]VertexInterface
 	// mutex
 	mutex sync.RWMutex
@@ -63,20 +60,6 @@ func (g *AbstractGraph) Name() string {
 	defer g.mutex.RUnlock()
 	g.mutex.RLock()
 	return g.name
-}
-
-// update graph type
-func (g *AbstractGraph) SetType(t GraphType) {
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
-	g.graphType = t
-}
-
-// read graph name
-func (g *AbstractGraph) Type() GraphType {
-	defer g.mutex.RUnlock()
-	g.mutex.RLock()
-	return g.graphType
 }
 
 // insert a new vertex
