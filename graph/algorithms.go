@@ -64,3 +64,51 @@ func TopoSort(g GraphInterface) (sortVertexList []VertexInterface, err error) {
 
 	return sortVertexList, nil
 }
+
+func BFS(root VertexInterface, executeFunc func(VertexInterface) bool) {
+	vQueue := simpleSt.NewSimpleQueue()
+	hasVisted := make(map[string]bool)
+	vQueue.Pushback(root)
+	hasVisted[root.Name()] = true
+	for {
+		vi := vQueue.Popfront()
+		if vi == nil {
+			break
+		}
+		v := vi.(VertexInterface)
+		if !executeFunc(v) {
+			break
+		}
+
+		for _, edge := range v.EdgesBackward() {
+			adj := edge.To()
+			if _, ok := hasVisted[adj.Name()]; ok {
+				continue
+			} else {
+				vQueue.Pushback(adj)
+				hasVisted[adj.Name()] = true
+			}
+		}
+	}
+}
+
+func DFS(root VertexInterface, executeFunc func(VertexInterface) bool) {
+	hasVisted := make(map[string]bool)
+
+	DFSVisit(root, hasVisted, executeFunc)
+}
+
+func DFSVisit(root VertexInterface, hasVisted map[string]bool, executeFunc func(VertexInterface) bool) {
+	hasVisted[root.Name()] = true
+	executeFunc(root)
+	if len(root.EdgesBackward()) == 0 {
+		return
+	}
+
+	for _, edge := range root.EdgesBackward() {
+		adj := edge.To()
+		if _, ok := hasVisted[adj.Name()]; !ok {
+			DFSVisit(adj, hasVisted, executeFunc)
+		}
+	}
+}
