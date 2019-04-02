@@ -52,7 +52,6 @@ type VertexInterface interface {
 // structure for vertex
 type AbstractVertex struct {
 	// meta data
-	vertexType VertexType
 	name         string
 	data       interface{}
 	// graph data
@@ -70,13 +69,6 @@ func NewVertex(name string, data interface{}) *AbstractVertex {
 	}
 }
 
-// Update vertex type
-func (v *AbstractVertex) SetType(t VertexType) {
-	defer v.mutex.Unlock()
-	v.mutex.Lock()
-	v.vertexType = t
-}
-
 // Update vertex name
 func (v *AbstractVertex) SetName(name string) {
 	defer v.mutex.Unlock()
@@ -89,13 +81,6 @@ func (v *AbstractVertex) SetData(data interface{}) {
 	defer v.mutex.Unlock()
 	v.mutex.Lock()
 	v.data = data
-}
-
-// get vertex type
-func (v *AbstractVertex) Type() VertexType {
-	defer v.mutex.RUnlock()
-	v.mutex.RLock()
-	return v.vertexType
 }
 
 // get vertex name
