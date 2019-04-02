@@ -23,7 +23,7 @@ type GraphInterface interface {
 	InsertVertex(VertexInterface) error
 	InsertEdge(src, dst VertexInterface, ei EdgeInterface) error
 	// read
-	GetVertex(id string) VertexInterface
+	GetVertex(name string) VertexInterface
 	Verteces() map[string]VertexInterface
 	// update
 	SetVertex(v VertexInterface) error
@@ -67,11 +67,11 @@ func (g *AbstractGraph) InsertVertex(v VertexInterface) error {
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	if _, ok := g.verteces[v.Id()]; ok {
-		return fmt.Errorf("vertex[id:%s] already exists!", v.Id())
+	if _, ok := g.verteces[v.Name()]; ok {
+		return fmt.Errorf("vertex[name:%s] already exists!", v.Name())
 	}
 
-	g.verteces[v.Id()] = v
+	g.verteces[v.Name()] = v
 
 	return nil
 }
@@ -81,12 +81,12 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	if _, ok := g.verteces[src.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", src.Id())
+	if _, ok := g.verteces[src.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
 	}
 
-	if _, ok := g.verteces[dst.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", dst.Id())
+	if _, ok := g.verteces[dst.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
 	src.Adjoin(dst, ei)
@@ -94,12 +94,12 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 	return nil
 }
 
-// get a vertex by id
-func (g *AbstractGraph) GetVertex(id string) VertexInterface {
+// get a vertex by name
+func (g *AbstractGraph) GetVertex(name string) VertexInterface {
 	defer g.mutex.RUnlock()
 	g.mutex.RLock()
 
-	v, ok := g.verteces[id]
+	v, ok := g.verteces[name]
 	if !ok {
 		return nil
 	}
@@ -107,7 +107,7 @@ func (g *AbstractGraph) GetVertex(id string) VertexInterface {
 	return v
 }
 
-// get id-vertex map
+// get name-vertex map
 func (g *AbstractGraph) Verteces() map[string]VertexInterface {
 	defer g.mutex.RUnlock()
 	g.mutex.RLock()
@@ -115,16 +115,16 @@ func (g *AbstractGraph) Verteces() map[string]VertexInterface {
 	return g.verteces
 }
 
-// update a vertex with specified id, and return an error if the id not exist
+// update a vertex with specified name, and return an error if the name not exist
 func (g *AbstractGraph) SetVertex(v VertexInterface) error {
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	if _, ok := g.verteces[v.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", v.Id())
+	if _, ok := g.verteces[v.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", v.Name())
 	}
 
-	g.verteces[v.Id()] = v
+	g.verteces[v.Name()] = v
 
 	return nil
 }
@@ -134,12 +134,12 @@ func (g *AbstractGraph) SetEdge(src, dst VertexInterface, ei EdgeInterface) erro
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	if _, ok := g.verteces[src.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", src.Id())
+	if _, ok := g.verteces[src.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
 	}
 
-	if _, ok := g.verteces[dst.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", dst.Id())
+	if _, ok := g.verteces[dst.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
 	src.SetEdge(dst, ei)
@@ -156,7 +156,7 @@ func (g *AbstractGraph) RemoveVertex(v VertexInterface) {
 		v.RemoveAdjoin(src)
 		src.RemoveAdjoin(v)
 	}
-	delete(g.verteces, v.Id())
+	delete(g.verteces, v.Name())
 }
 
 // remove a edge in graph which is from src verte to dst vertex
@@ -164,12 +164,12 @@ func (g *AbstractGraph) RemoveEdge(src, dst VertexInterface) error {
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	if _, ok := g.verteces[src.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", src.Id())
+	if _, ok := g.verteces[src.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
 	}
 
-	if _, ok := g.verteces[dst.Id()]; !ok {
-		return fmt.Errorf("vertex[id:%s] not exists, insert vertex first!", dst.Id())
+	if _, ok := g.verteces[dst.Name()]; !ok {
+		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
 	src.RemoveAdjoin(dst)

@@ -26,7 +26,7 @@ type VertexInterface interface {
 	SetId(string)
 	SetData(interface{})
 	// read
-	Id() string
+	Name() string
 	Data() interface{}
 
 	/////// relation data ///////
@@ -53,9 +53,8 @@ type VertexInterface interface {
 type AbstractVertex struct {
 	// meta data
 	vertexType VertexType
-	id         string
+	name         string
 	data       interface{}
-	executor   ExecutorFunc
 	// graph data
 	edges     simpleSt.SimpleVector
 	indegree  int
@@ -64,9 +63,9 @@ type AbstractVertex struct {
 	mutex sync.RWMutex
 }
 
-func NewVertex(id string, data interface{}) *AbstractVertex {
+func NewVertex(name string, data interface{}) *AbstractVertex {
 	return &AbstractVertex{
-		id:   id,
+		name:   name,
 		data: data,
 	}
 }
@@ -78,11 +77,11 @@ func (v *AbstractVertex) SetType(t VertexType) {
 	v.vertexType = t
 }
 
-// Update vertex id
-func (v *AbstractVertex) SetId(id string) {
+// Update vertex name
+func (v *AbstractVertex) SetId(name string) {
 	defer v.mutex.Unlock()
 	v.mutex.Lock()
-	v.id = id
+	v.name = name
 }
 
 // Update vertex data
@@ -99,11 +98,11 @@ func (v *AbstractVertex) Type() VertexType {
 	return v.vertexType
 }
 
-// get vertex id
-func (v *AbstractVertex) Id() string {
+// get vertex name
+func (v *AbstractVertex) Name() string {
 	defer v.mutex.RUnlock()
 	v.mutex.RLock()
-	return v.id
+	return v.name
 }
 
 // get vertex data
@@ -111,22 +110,6 @@ func (v *AbstractVertex) Data() interface{} {
 	defer v.mutex.RUnlock()
 	v.mutex.RLock()
 	return v.data
-}
-
-// vertex behavior set
-func (v *AbstractVertex) SetExecutor(executorFunc ExecutorFunc) {
-	defer v.mutex.Unlock()
-	v.mutex.Lock()
-	v.executor = executorFunc
-}
-
-// vertex behavior execute
-func (v *AbstractVertex) Execute(inputs ...interface{}) (interface{}, error) {
-	if v.executor == nil {
-		return nil, fmt.Errorf("no executor.")
-	}
-
-	return v.executor(inputs)
 }
 
 // update adjacent vertex

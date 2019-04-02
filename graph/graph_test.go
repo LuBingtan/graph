@@ -11,7 +11,7 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 	for k, v := range g.Verteces() {
 		t.Log("=========Node=========:")
 		t.Log("key:", k)
-		t.Log("id:", v.Id())
+		t.Log("id:", v.Name())
 		t.Log("Indegree:", v.Indegree())
 		t.Log("Outdegree:", v.Outdegree())
 		edges := v.Edges()
@@ -27,7 +27,7 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 	t.Log("*****************************sort*****************************")
 	for _, v := range vList {
 		t.Log("=========Node=========:")
-		t.Log("id:", v.Id())
+		t.Log("id:", v.Name())
 		t.Log("Indegree:", v.Indegree())
 		t.Log("Outdegree:", v.Outdegree())
 		edges := v.Edges()
