@@ -2,12 +2,15 @@ package graph
 
 import "sync"
 
-/*****************************************  edge interface  *****************************************/
+/**********************************************************************************/
+// edge interface
+/**********************************************************************************/
 
 // define for edge type
 type EdgeType string
+
 const (
-	ForwardEdge EdgeType = "forward"
+	ForwardEdge  EdgeType = "forward"
 	BackwardEdge EdgeType = "backward"
 )
 
@@ -28,13 +31,14 @@ type EdgeInterface interface {
 	From() VertexInterface
 	To() VertexInterface
 
-	/////// copy & reset ///////
-	CopyFrom(ei EdgeInterface)
-	CopyMetaFrom(ei EdgeInterface)
-	CopyRelateFrom(ei EdgeInterface)
+	/////// copy ///////
+	Copy() EdgeInterface
+
 }
 
-/*****************************************  edge struct  *****************************************/
+/**********************************************************************************/
+// edge struct
+/**********************************************************************************/
 
 type AbstractEdge struct {
 	// meta data
@@ -42,7 +46,7 @@ type AbstractEdge struct {
 	weight   int
 	// graph data
 	fromVertex VertexInterface
-	toVertex VertexInterface
+	toVertex   VertexInterface
 	// mutex
 	mutex sync.RWMutex
 }
@@ -94,19 +98,8 @@ func (e *AbstractEdge) To() VertexInterface {
 	return e.toVertex
 }
 
-func (e *AbstractEdge) CopyFrom(ei EdgeInterface) {
-	e.weight = ei.Weight()
-	e.edgeType = ei.Type()
-	e.fromVertex = ei.From()
-	e.toVertex = ei.To()
-}
-
-func (e *AbstractEdge) CopyMetaFrom(ei EdgeInterface) {
-	e.weight = ei.Weight()
-}
-
-func (e *AbstractEdge) CopyRelateFrom(ei EdgeInterface) {
-	e.edgeType = ei.Type()
-	e.fromVertex = ei.From()
-	e.toVertex = ei.To()
+func (e *AbstractEdge) Copy() EdgeInterface {
+	return &AbstractEdge{
+		weight: e.weight,
+	}
 }

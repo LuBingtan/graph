@@ -5,7 +5,9 @@ import (
 	"sync"
 )
 
-/*****************************************  graph interface  *****************************************/
+/**********************************************************************************/
+// graph interface
+/**********************************************************************************/
 
 // define for graph type
 type GraphType string
@@ -31,12 +33,18 @@ type GraphInterface interface {
 	// delete
 	RemoveVertex(VertexInterface)
 	RemoveEdge(src, dst VertexInterface) error
+
+	/////// copy ///////
+	DeepCopy() GraphInterface
 }
 
-/*****************************************  graph struct  *****************************************/
+/**********************************************************************************/
+// graph struct
+/**********************************************************************************/
+
 type AbstractGraph struct {
-	name      string
-	verteces  map[string]VertexInterface
+	name     string
+	verteces map[string]VertexInterface
 	// mutex
 	mutex sync.RWMutex
 }
@@ -47,6 +55,10 @@ func NewGraph(name string) *AbstractGraph {
 		verteces: make(map[string]VertexInterface),
 	}
 }
+
+/**********************************************************************************/
+// implementation for interface method
+/**********************************************************************************/
 
 // update graph name
 func (g *AbstractGraph) SetName(n string) {
@@ -78,9 +90,6 @@ func (g *AbstractGraph) InsertVertex(v VertexInterface) error {
 
 // insert a new edge which is from src vertex to dst vertex
 func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) error {
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
-
 	if _, ok := g.verteces[src.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
 	}
@@ -89,7 +98,11 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
-	src.AdjoinBackward(dst, ei)
+	g.mutex.Lock()
+
+	src.Adjoin(dst, ei, BackwardEdge)
+
+	g.mutex.Unlock()
 
 	return nil
 }
@@ -117,22 +130,19 @@ func (g *AbstractGraph) Verteces() map[string]VertexInterface {
 
 // update a vertex with specified name, and return an error if the name not exist
 func (g *AbstractGraph) SetVertex(v VertexInterface) error {
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
-
 	if _, ok := g.verteces[v.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", v.Name())
 	}
 
-	g.verteces[v.Name()] = v
+	g.mutex.Lock()
+	g.verteces[v.Name()].SetData(v.Data())
+	g.mutex.Unlock()
 
 	return nil
 }
 
 // update a edge which is from src verte to dst vertex
 func (g *AbstractGraph) SetEdge(src, dst VertexInterface, ei EdgeInterface) error {
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
 
 	if _, ok := g.verteces[src.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
@@ -142,7 +152,9 @@ func (g *AbstractGraph) SetEdge(src, dst VertexInterface, ei EdgeInterface) erro
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
+	g.mutex.Lock()
 	src.SetEdge(dst, ei)
+	g.mutex.Unlock()
 
 	return nil
 }
@@ -150,20 +162,18 @@ func (g *AbstractGraph) SetEdge(src, dst VertexInterface, ei EdgeInterface) erro
 // remove a vertex in graph, and those verteces which point to this vertex will also remove it
 func (g *AbstractGraph) RemoveVertex(v VertexInterface) {
 	defer g.mutex.Unlock()
-	g.mutex.Lock()
 
 	for _, src := range g.verteces {
 		v.RemoveAdjoin(src)
-		src.RemoveAdjoin(v)
 	}
+
+	g.mutex.Lock()
+
 	delete(g.verteces, v.Name())
 }
 
 // remove a edge in graph which is from src verte to dst vertex
 func (g *AbstractGraph) RemoveEdge(src, dst VertexInterface) error {
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
-
 	if _, ok := g.verteces[src.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
 	}
@@ -172,7 +182,34 @@ func (g *AbstractGraph) RemoveEdge(src, dst VertexInterface) error {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
+	g.mutex.Lock()
+
 	src.RemoveAdjoin(dst)
 
+	g.mutex.Unlock()
+
 	return nil
+}
+
+func (g *AbstractGraph) DeepCopy() GraphInterface {
+	newG := NewGraph(g.name)
+	for _, v := range g.verteces {
+		newG.InsertVertex(v.Copy())
+	}
+
+	for _, v := range g.verteces {
+		for _, ei := range v.EdgesBackward() {
+			newG.InsertEdgeByName(ei.From().Name(), ei.To().Name(), ei.Copy())
+		}
+	}
+
+	return newG
+}
+
+/**********************************************************************************/
+// struct method
+/**********************************************************************************/
+
+func (g *AbstractGraph) InsertEdgeByName(srcName, dstName string, ei EdgeInterface) error {
+	return g.InsertEdge(g.GetVertex(srcName), g.GetVertex(dstName), ei)
 }

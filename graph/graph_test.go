@@ -4,7 +4,9 @@ import (
 	"testing"
 )
 
-func GraphPrint(t *testing.T, g *AbstractGraph) {
+/// [Inteface]
+// print graph method
+func GraphSortPrint(t *testing.T, g *AbstractGraph) {
 	t.Logf("AbstractGraph node number:%d\n", len(g.Verteces()))
 
 	t.Log("*****************************original*****************************")
@@ -14,9 +16,12 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 		t.Log("id:", v.Name())
 		t.Log("Indegree:", v.Indegree())
 		t.Log("Outdegree:", v.Outdegree())
-		edges := v.EdgesBackward()
-		for _, edge := range edges {
-			t.Logf("edge:%v,", edge.To())
+
+		for _, edge := range v.EdgesForward() {
+			t.Logf("edge_forward: %v -> %v", edge.From().Name(), edge.To().Name())
+		}
+		for _, edge := range v.EdgesBackward() {
+			t.Logf("edge_backward: %v -> %v", edge.From().Name(), edge.To().Name())
 		}
 	}
 
@@ -30,14 +35,18 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 		t.Log("id:", v.Name())
 		t.Log("Indegree:", v.Indegree())
 		t.Log("Outdegree:", v.Outdegree())
-		edges := v.EdgesBackward()
-		for _, edge := range edges {
-			t.Logf("edge:%v,", edge.To())
+
+		for _, edge := range v.EdgesForward() {
+			t.Logf("edge_forward: %v -> %v", edge.From().Name(), edge.To().Name())
+		}
+
+		for _, edge := range v.EdgesBackward() {
+			t.Logf("edge_backward: %v -> %v", edge.From().Name(), edge.To().Name())
 		}
 	}
 }
 
-func Test4Graph4Init(t *testing.T) {
+func Test4Graph4Create(t *testing.T) {
 	t.Logf("testing for graph initialize start.\n")
 	// new graph
 	g := NewGraph("AbstractGraph")
@@ -47,9 +56,9 @@ func Test4Graph4Init(t *testing.T) {
 	n2 := NewVertex("node2", 2)
 	n3 := NewVertex("node3", 3)
 	// add vertex
+	g.InsertVertex(n0)
 	g.InsertVertex(n1)
 	g.InsertVertex(n2)
-	g.InsertVertex(n0)
 	g.InsertVertex(n3)
 	// add edge
 	g.InsertEdge(n3, n1, NewEdge())
@@ -57,7 +66,7 @@ func Test4Graph4Init(t *testing.T) {
 	g.InsertEdge(n2, n1, NewEdge())
 	g.InsertEdge(n1, n0, NewEdge())
 
-	GraphPrint(t, g)
+	GraphSortPrint(t, g)
 }
 
 func Test4Graph4Del(t *testing.T) {
@@ -80,16 +89,24 @@ func Test4Graph4Del(t *testing.T) {
 	g.InsertEdge(n1, n2, NewEdge())
 	g.InsertEdge(n2, n3, NewEdge())
 
-	t.Log("**********************init**************************")
-	GraphPrint(t, g)
+	t.Log("----------------------------------------------------------------init----------------------------------------------------------------")
+	GraphSortPrint(t, g)
 
-	t.Log("**********************remove vertex**************************")
+	t.Log("----------------------------------------------------------------remove vertex----------------------------------------------------------------")
 	g.RemoveVertex(n1)
 
-	GraphPrint(t, g)
+	GraphSortPrint(t, g)
 
-	t.Log("**********************remove edge**************************")
-	err := g.RemoveEdge(n0, n1)
+	t.Log("----------------------------------------------------------------remove edge 2->3----------------------------------------------------------------")
+	err := g.RemoveEdge(n2, n3)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	GraphSortPrint(t, g)
+
+	t.Log("----------------------------------------------------------------remove edge 0->1----------------------------------------------------------------")
+	err = g.RemoveEdge(n0, n1)
 	if err != nil {
 		t.Log(err)
 	}
