@@ -51,9 +51,9 @@ func TopoSort(g GraphInterface) (sortVertexList []VertexInterface, err error) {
 		sortVertexList = append(sortVertexList, g.GetVertex(id))
 		// ge vertex
 		v := g.GetVertex(id)
-		edgeList := v.Edges()
+		edgeList := v.EdgesBackward()
 		for _, edge := range edgeList {
-			adjoinId := edge.Vertex().Name()
+			adjoinId := edge.To().Name()
 			indgreeMap[adjoinId]--
 			if indgreeMap[adjoinId] == 0 {
 				idQueue.Pushback(adjoinId)

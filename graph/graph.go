@@ -89,7 +89,7 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
-	src.Adjoin(dst, ei)
+	src.AdjoinBackward(dst, ei)
 
 	return nil
 }

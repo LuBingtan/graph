@@ -6,9 +6,10 @@ import "sync"
 
 // define for edge type
 type EdgeType string
-
-// define for edge state
-type EdgeState string
+const (
+	ForwardEdge EdgeType = "forward"
+	BackwardEdge EdgeType = "backward"
+)
 
 // define for edge interface
 type EdgeInterface interface {
@@ -22,9 +23,15 @@ type EdgeInterface interface {
 
 	/////// relation data ///////
 	// update
-	SetVertex(VertexInterface)
+	SetVertex(from, to VertexInterface)
 	// read
-	Vertex() VertexInterface
+	From() VertexInterface
+	To() VertexInterface
+
+	/////// copy & reset ///////
+	CopyFrom(ei EdgeInterface)
+	CopyMetaFrom(ei EdgeInterface)
+	CopyRelateFrom(ei EdgeInterface)
 }
 
 /*****************************************  edge struct  *****************************************/
@@ -34,7 +41,8 @@ type AbstractEdge struct {
 	edgeType EdgeType
 	weight   int
 	// graph data
-	vertex VertexInterface
+	fromVertex VertexInterface
+	toVertex VertexInterface
 	// mutex
 	mutex sync.RWMutex
 }
@@ -67,14 +75,38 @@ func (e *AbstractEdge) Weight() int {
 	return e.weight
 }
 
-func (e *AbstractEdge) SetVertex(v VertexInterface) {
+func (e *AbstractEdge) SetVertex(from, to VertexInterface) {
 	defer e.mutex.Unlock()
 	e.mutex.Lock()
-	e.vertex = v
+	e.fromVertex = from
+	e.toVertex = to
 }
 
-func (e *AbstractEdge) Vertex() VertexInterface {
+func (e *AbstractEdge) From() VertexInterface {
 	defer e.mutex.RUnlock()
 	e.mutex.RLock()
-	return e.vertex
+	return e.fromVertex
+}
+
+func (e *AbstractEdge) To() VertexInterface {
+	defer e.mutex.RUnlock()
+	e.mutex.RLock()
+	return e.toVertex
+}
+
+func (e *AbstractEdge) CopyFrom(ei EdgeInterface) {
+	e.weight = ei.Weight()
+	e.edgeType = ei.Type()
+	e.fromVertex = ei.From()
+	e.toVertex = ei.To()
+}
+
+func (e *AbstractEdge) CopyMetaFrom(ei EdgeInterface) {
+	e.weight = ei.Weight()
+}
+
+func (e *AbstractEdge) CopyRelateFrom(ei EdgeInterface) {
+	e.edgeType = ei.Type()
+	e.fromVertex = ei.From()
+	e.toVertex = ei.To()
 }

@@ -14,9 +14,9 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 		t.Log("id:", v.Name())
 		t.Log("Indegree:", v.Indegree())
 		t.Log("Outdegree:", v.Outdegree())
-		edges := v.Edges()
+		edges := v.EdgesBackward()
 		for _, edge := range edges {
-			t.Logf("edge:%v,", edge.Vertex())
+			t.Logf("edge:%v,", edge.To())
 		}
 	}
 
@@ -30,9 +30,9 @@ func GraphPrint(t *testing.T, g *AbstractGraph) {
 		t.Log("id:", v.Name())
 		t.Log("Indegree:", v.Indegree())
 		t.Log("Outdegree:", v.Outdegree())
-		edges := v.Edges()
+		edges := v.EdgesBackward()
 		for _, edge := range edges {
-			t.Logf("edge:%v,", edge.Vertex())
+			t.Logf("edge:%v,", edge.To())
 		}
 	}
 }
@@ -47,9 +47,9 @@ func Test4Graph4Init(t *testing.T) {
 	n2 := NewVertex("node2", 2)
 	n3 := NewVertex("node3", 3)
 	// add vertex
-	g.InsertVertex(n0)
 	g.InsertVertex(n1)
 	g.InsertVertex(n2)
+	g.InsertVertex(n0)
 	g.InsertVertex(n3)
 	// add edge
 	g.InsertEdge(n3, n1, NewEdge())
