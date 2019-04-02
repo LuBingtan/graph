@@ -23,7 +23,7 @@ type ExecutorFunc func(...interface{}) (interface{}, error)
 type VertexInterface interface {
 	/////// meta data ///////
 	// update
-	SetId(string)
+	SetName(string)
 	SetData(interface{})
 	// read
 	Name() string
@@ -78,7 +78,7 @@ func (v *AbstractVertex) SetType(t VertexType) {
 }
 
 // Update vertex name
-func (v *AbstractVertex) SetId(name string) {
+func (v *AbstractVertex) SetName(name string) {
 	defer v.mutex.Unlock()
 	v.mutex.Lock()
 	v.name = name
