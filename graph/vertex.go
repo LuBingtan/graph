@@ -27,7 +27,7 @@ type VertexInterface interface {
 
 	/////// relation data ///////
 	// update
-	Adjoin(dst VertexInterface, ei EdgeInterface, edgeType EdgeType)
+	Adjoin(dst VertexInterface, ei EdgeInterface) error
 	SetEdge(adj VertexInterface, ei EdgeInterface) error
 	// delete
 	RemoveAdjoin(VertexInterface)
@@ -105,42 +105,44 @@ func (v *AbstractVertex) Data() interface{} {
 // If edge type is forward edge, add input vertex as forward vertex and increase indegree
 // If edge type is backward edge, add input vertex as backward vertex, and increase outdegree
 // When Adjoin is done, it will continue 'Adjoin' itself to the 'next' vertex
-func (v *AbstractVertex) Adjoin(next VertexInterface, ei EdgeInterface, edgeType EdgeType) {
+func (v *AbstractVertex) Adjoin(next VertexInterface, ei EdgeInterface) error {
 	if v.FindAdjoin(next) != -1 {
-		return
+		return fmt.Errorf("vertex[name:%s] already exists.", next.Name())
 	}
 
-	if edgeType == BackwardEdge {
-		// set edge type & vertex
-		ei.SetType(BackwardEdge)
-		ei.SetVertex(v, next)
-
-		// update edges and outdegree
-		v.mutex.Lock()
-
-		v.edges.Pushback(ei)
+	var newEdgeType EdgeType
+	switch ei.Type() {
+	case BackwardEdge:
 		v.incOutdegree()
-
-		v.mutex.Unlock()
-
-		// let next vertex adjoin this vertex in forward edge type
-		next.Adjoin(v, ei.Copy(), ForwardEdge)
-	} else {
-		// set edge type & vertex
-		ei.SetType(ForwardEdge)
-		ei.SetVertex(next, v)
-
-		// update edges and outdegree
-		v.mutex.Lock()
-
-		v.edges.Pushback(ei)
+		newEdgeType = ForwardEdge
+	case ForwardEdge:
 		v.incIndegree()
-
-		v.mutex.Unlock()
-
-		// let next vertex adjoin this vertex in backward edge type
-		next.Adjoin(v, ei.Copy(), BackwardEdge)
+		newEdgeType = BackwardEdge
+	case UndirectedEdge:
+		v.incIndegree()
+		v.incOutdegree()
+		newEdgeType = UndirectedEdge
+	default:
+		return fmt.Errorf("Unknown edge type[type:%s].", ei.Type())
 	}
+
+	// set edge type & vertex
+	ei.SetVertex(v, next)
+
+	// update edges and outdegree
+	v.mutex.Lock()
+
+	v.edges.Pushback(ei)
+
+	v.mutex.Unlock()
+
+	newEi := ei.Copy()
+	newEi.SetType(newEdgeType)
+
+	// let next vertex adjoin this vertex in forward edge type
+	next.Adjoin(v, newEi)
+
+	return nil
 }
 
 // Update edge
@@ -223,7 +225,7 @@ func (v *AbstractVertex) EdgesForward() (ei []EdgeInterface) {
 
 	for _, d := range v.edges.Data() {
 		edge := d.(EdgeInterface)
-		if edge.Type() == ForwardEdge {
+		if edge.Type() == ForwardEdge || edge.Type() == UndirectedEdge {
 			ei = append(ei, edge)
 		}
 	}
@@ -238,7 +240,7 @@ func (v *AbstractVertex) EdgesBackward() (ei []EdgeInterface) {
 
 	for _, d := range v.edges.Data() {
 		edge := d.(EdgeInterface)
-		if edge.Type() == BackwardEdge {
+		if edge.Type() == BackwardEdge || edge.Type() == UndirectedEdge {
 			ei = append(ei, edge)
 		}
 	}

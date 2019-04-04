@@ -10,8 +10,9 @@ import "sync"
 type EdgeType string
 
 const (
-	ForwardEdge  EdgeType = "forward"
-	BackwardEdge EdgeType = "backward"
+	ForwardEdge    EdgeType = "forward"
+	BackwardEdge   EdgeType = "backward"
+	UndirectedEdge EdgeType = "undirected"
 )
 
 // define for edge interface
@@ -33,7 +34,6 @@ type EdgeInterface interface {
 
 	/////// copy ///////
 	Copy() EdgeInterface
-
 }
 
 /**********************************************************************************/

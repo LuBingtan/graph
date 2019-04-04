@@ -98,13 +98,12 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
+	ei.SetType(BackwardEdge)
+
+	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	src.Adjoin(dst, ei, BackwardEdge)
-
-	g.mutex.Unlock()
-
-	return nil
+	return src.Adjoin(dst, ei)
 }
 
 // get a vertex by name
