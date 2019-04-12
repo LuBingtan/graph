@@ -2,11 +2,13 @@ package simplestructure
 
 import (
 	"fmt"
-	"sync"
 	"reflect"
+	"sync"
 )
 
-/***************************************** define vector interface *****************************************/
+/**********************************************************************************/
+// define vector interface
+/**********************************************************************************/
 
 type Vector interface {
 	Pushback(interface{})
@@ -17,32 +19,14 @@ type Vector interface {
 	Popback() interface{}
 	Popfront() interface{}
 
+	Find(v interface{}) int
 	At(int) interface{}
 	Len() int
-	Iterator() Iterator
 }
 
-/***************************************** define vector iterator *****************************************/
-
-type vectorIterator struct {
-	vec   Vector
-	index int
-}
-
-func (it *vectorIterator) HasNext() bool {
-	return it.index <= it.vec.Len()-1
-}
-
-func (it *vectorIterator) Next() interface{} {
-	if !it.HasNext() {
-		return nil
-	}
-
-	it.index++
-	return it.vec.At(it.index - 1)
-}
-
-/***************************************** define simple vector *****************************************/
+/**********************************************************************************/
+// define simple vector
+/**********************************************************************************/
 
 type SimpleVector struct {
 	data []interface{}
@@ -56,7 +40,6 @@ func NewSimpleVector() *SimpleVector {
 
 func (vec *SimpleVector) Pushback(v interface{}) {
 	defer vec.lock.Unlock()
-
 	vec.lock.Lock()
 
 	vec.data = append(vec.data, v)
@@ -64,8 +47,10 @@ func (vec *SimpleVector) Pushback(v interface{}) {
 
 func (vec *SimpleVector) Insert(v interface{}, next int) {
 	defer vec.lock.Unlock()
-
 	vec.lock.Lock()
+	if next < 0 {
+		return
+	}
 
 	vec.data = append(vec.data, nil)
 	copy(vec.data[next:], vec.data[next+1:len(vec.data)])
@@ -74,10 +59,9 @@ func (vec *SimpleVector) Insert(v interface{}, next int) {
 
 func (vec *SimpleVector) Replace(index int, v interface{}) error {
 	defer vec.lock.Unlock()
-
 	vec.lock.Lock()
 
-	if index > len(vec.data)-1 {
+	if index > len(vec.data)-1 || index < 0 {
 		return fmt.Errorf("index out of range!")
 	}
 
@@ -88,8 +72,11 @@ func (vec *SimpleVector) Replace(index int, v interface{}) error {
 
 func (vec *SimpleVector) Remove(index int) interface{} {
 	defer vec.lock.Unlock()
-
 	vec.lock.Lock()
+
+	if index < 0 {
+		return nil
+	}
 
 	if index > len(vec.data)-1 {
 		return nil
@@ -111,8 +98,11 @@ func (vec *SimpleVector) Popfront() interface{} {
 
 func (vec *SimpleVector) At(index int) interface{} {
 	defer vec.lock.RUnlock()
-
 	vec.lock.RLock()
+
+	if index < 0 {
+		return nil
+	}
 
 	if index > len(vec.data)-1 {
 		return nil
@@ -133,19 +123,14 @@ func (vec *SimpleVector) Find(v interface{}) int {
 
 func (vec *SimpleVector) Len() int {
 	defer vec.lock.RUnlock()
-
 	vec.lock.RLock()
 
 	return len(vec.data)
 }
 
-func (vec *SimpleVector) Iterator() Iterator {
-	return &vectorIterator{
-		vec:   vec,
-		index: 0,
-	}
-}
-
 func (vec *SimpleVector) Data() []interface{} {
+	defer vec.lock.RUnlock()
+	vec.lock.RLock()
+
 	return vec.data
 }

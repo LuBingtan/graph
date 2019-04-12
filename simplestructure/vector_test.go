@@ -4,12 +4,12 @@ import (
 	"testing"
 )
 
-func PrintIterator(t *testing.T, it Iterator) {
-	t.Log("==========PrintIterator start===========")
-	for n := it.Next(); n != nil; n = it.Next() {
+func PrintData(t *testing.T, l []interface{}) {
+	t.Log("==========PrintData start===========")
+	for _, n := range l {
 		t.Log(n)
 	}
-	t.Log("==========PrintIterator end===========")
+	t.Log("==========PrintData end===========")
 }
 
 func Test4Vector4Create(t *testing.T) {
@@ -20,14 +20,14 @@ func Test4Vector4Create(t *testing.T) {
 	vec.Pushback(3)
 	vec.Pushback(4)
 	t.Log(vec.Len())
-	PrintIterator(t, vec.Iterator())
+	PrintData(t, vec.Data())
 
 	t.Logf("pop back:%v", vec.Popback())
-	PrintIterator(t, vec.Iterator())
+	PrintData(t, vec.Data())
 
 	t.Logf("pop front:%v", vec.Popfront())
-	PrintIterator(t, vec.Iterator())
+	PrintData(t, vec.Data())
 
 	t.Logf("remove:%v", vec.Remove(3))
-	PrintIterator(t, vec.Iterator())
+	PrintData(t, vec.Data())
 }

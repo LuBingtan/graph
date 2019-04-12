@@ -5,15 +5,23 @@ import (
 	"sync"
 )
 
+/**********************************************************************************/
+// define queue interface
+/**********************************************************************************/
+
 type Queue interface {
 	Pushback(interface{})
 	Popfront() interface{}
 	Size() int
 }
 
+/**********************************************************************************/
+// define simple queue
+/**********************************************************************************/
+
 type SimpleQueue struct {
 	elements *list.List
-	lock     sync.Mutex
+	lock     sync.RWMutex
 }
 
 func NewSimpleQueue() *SimpleQueue {
@@ -28,7 +36,6 @@ func NewSimpleQueue() *SimpleQueue {
 
 func (q *SimpleQueue) Pushback(v interface{}) {
 	defer q.lock.Unlock()
-
 	q.lock.Lock()
 
 	q.elements.PushBack(v)
@@ -36,7 +43,6 @@ func (q *SimpleQueue) Pushback(v interface{}) {
 
 func (q *SimpleQueue) Popfront() interface{} {
 	defer q.lock.Unlock()
-
 	q.lock.Lock()
 
 	e := q.elements.Front()
@@ -47,5 +53,8 @@ func (q *SimpleQueue) Popfront() interface{} {
 }
 
 func (q *SimpleQueue) Size() int {
+	defer q.lock.RUnlock()
+	q.lock.RLock()
+
 	return q.elements.Len()
 }
