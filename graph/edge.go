@@ -20,10 +20,10 @@ type EdgeInterface interface {
 	/////// meta data ///////
 	// update
 	SetType(EdgeType)
-	SetWeight(int)
+	SetWeight(float32)
 	// read
 	Type() EdgeType
-	Weight() int
+	Weight() float32
 
 	/////// relation data ///////
 	// update
@@ -43,7 +43,7 @@ type EdgeInterface interface {
 type AbstractEdge struct {
 	// meta data
 	edgeType EdgeType
-	weight   int
+	weight   float32
 	// graph data
 	fromVertex VertexInterface
 	toVertex   VertexInterface
@@ -51,8 +51,11 @@ type AbstractEdge struct {
 	mutex sync.RWMutex
 }
 
-func NewEdge() *AbstractEdge {
-	return &AbstractEdge{}
+func NewEdge(weight float32, edgeType EdgeType) *AbstractEdge {
+	return &AbstractEdge{
+		edgeType: edgeType,
+		weight:   weight,
+	}
 }
 
 func (e *AbstractEdge) SetType(t EdgeType) {
@@ -61,7 +64,7 @@ func (e *AbstractEdge) SetType(t EdgeType) {
 	e.edgeType = t
 }
 
-func (e *AbstractEdge) SetWeight(w int) {
+func (e *AbstractEdge) SetWeight(w float32) {
 	defer e.mutex.Unlock()
 	e.mutex.Lock()
 	e.weight = w
@@ -73,7 +76,7 @@ func (e *AbstractEdge) Type() EdgeType {
 	return e.edgeType
 }
 
-func (e *AbstractEdge) Weight() int {
+func (e *AbstractEdge) Weight() float32 {
 	defer e.mutex.RUnlock()
 	e.mutex.RLock()
 	return e.weight

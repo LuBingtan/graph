@@ -3,7 +3,7 @@ package graph
 import (
 	"fmt"
 
-	simpleSt "graph/simplestructure"
+	simpleSt "easyai/utils/simplestructure"
 )
 
 // Determine if a graph is acyclic
@@ -65,9 +65,18 @@ func TopoSort(g GraphInterface) (sortVertexList []VertexInterface, err error) {
 	return sortVertexList, nil
 }
 
-func BFS(root VertexInterface, executeFunc func(VertexInterface) bool) {
-	vQueue := simpleSt.NewSimpleQueue()
+// Graph BFS
+// search start from a root vertex
+func BFS(g GraphInterface, executeFunc func(VertexInterface)) {
 	hasVisted := make(map[string]bool)
+	for _, v := range g.Verteces() {
+		if _, ok := hasVisted[v.Name()]; !ok {
+			BFSVertex(v, hasVisted, executeFunc)
+		}
+	}
+}
+func BFSVertex(root VertexInterface, hasVisted map[string]bool, executeFunc func(VertexInterface)) {
+	vQueue := simpleSt.NewSimpleQueue()
 	vQueue.Pushback(root)
 	hasVisted[root.Name()] = true
 	for {
@@ -76,9 +85,7 @@ func BFS(root VertexInterface, executeFunc func(VertexInterface) bool) {
 			break
 		}
 		v := vi.(VertexInterface)
-		if !executeFunc(v) {
-			break
-		}
+		executeFunc(v)
 
 		for _, edge := range v.EdgesBackward() {
 			adj := edge.To()
@@ -92,13 +99,18 @@ func BFS(root VertexInterface, executeFunc func(VertexInterface) bool) {
 	}
 }
 
-func DFS(root VertexInterface, executeFunc func(VertexInterface) bool) {
+// Graph BFS
+// search start from a root vertex
+func DFS(g GraphInterface, executeFunc func(VertexInterface)) {
 	hasVisted := make(map[string]bool)
-
-	DFSVisit(root, hasVisted, executeFunc)
+	for _, v := range g.Verteces() {
+		if _, ok := hasVisted[v.Name()]; !ok {
+			DFSVertex(v, hasVisted, executeFunc)
+		}
+	}
 }
 
-func DFSVisit(root VertexInterface, hasVisted map[string]bool, executeFunc func(VertexInterface) bool) {
+func DFSVertex(root VertexInterface, hasVisted map[string]bool, executeFunc func(VertexInterface)) {
 	hasVisted[root.Name()] = true
 	executeFunc(root)
 	if len(root.EdgesBackward()) == 0 {
@@ -108,7 +120,8 @@ func DFSVisit(root VertexInterface, hasVisted map[string]bool, executeFunc func(
 	for _, edge := range root.EdgesBackward() {
 		adj := edge.To()
 		if _, ok := hasVisted[adj.Name()]; !ok {
-			DFSVisit(adj, hasVisted, executeFunc)
+			hasVisted[adj.Name()] = true
+			DFSVertex(adj, hasVisted, executeFunc)
 		}
 	}
 }

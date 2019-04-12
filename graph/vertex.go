@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	simpleSt "graph/simplestructure"
+	simpleSt "easyai/utils/simplestructure"
 )
 
 /**********************************************************************************/
@@ -33,6 +33,7 @@ type VertexInterface interface {
 	RemoveAdjoin(VertexInterface)
 	// read
 	FindAdjoin(VertexInterface) int
+	Edges() []EdgeInterface
 	EdgesForward() []EdgeInterface
 	EdgesBackward() []EdgeInterface
 	Indegree() int
@@ -107,42 +108,38 @@ func (v *AbstractVertex) Data() interface{} {
 // When Adjoin is done, it will continue 'Adjoin' itself to the 'next' vertex
 func (v *AbstractVertex) Adjoin(next VertexInterface, ei EdgeInterface) error {
 	if v.FindAdjoin(next) != -1 {
-		return fmt.Errorf("vertex[name:%s] already exists.", next.Name())
+		return nil
 	}
 
-	var newEdgeType EdgeType
+	var reverseEdgeType EdgeType
 	switch ei.Type() {
 	case BackwardEdge:
 		v.incOutdegree()
-		newEdgeType = ForwardEdge
+		ei.SetVertex(v, next)
+		reverseEdgeType = ForwardEdge
 	case ForwardEdge:
 		v.incIndegree()
-		newEdgeType = BackwardEdge
+		ei.SetVertex(next, v)
+		reverseEdgeType = BackwardEdge
 	case UndirectedEdge:
 		v.incIndegree()
 		v.incOutdegree()
-		newEdgeType = UndirectedEdge
+		ei.SetVertex(v, next)
+		reverseEdgeType = UndirectedEdge
 	default:
-		return fmt.Errorf("Unknown edge type[type:%s].", ei.Type())
+		return fmt.Errorf("Unknown type[%s].", ei.Type())
 	}
 
-	// set edge type & vertex
-	ei.SetVertex(v, next)
-
-	// update edges and outdegree
 	v.mutex.Lock()
 
 	v.edges.Pushback(ei)
 
 	v.mutex.Unlock()
 
-	newEi := ei.Copy()
-	newEi.SetType(newEdgeType)
+	reverseEdge := ei.Copy()
+	reverseEdge.SetType(reverseEdgeType)
 
-	// let next vertex adjoin this vertex in forward edge type
-	next.Adjoin(v, newEi)
-
-	return nil
+	return next.Adjoin(v, reverseEdge)
 }
 
 // Update edge
@@ -155,13 +152,12 @@ func (v *AbstractVertex) SetEdge(adj VertexInterface, ei EdgeInterface) error {
 	}
 
 	// update edge's weight
+	defer v.mutex.Unlock()
 	v.mutex.Lock()
 
 	edgeI := v.edges.At(index)
 	edge := edgeI.(EdgeInterface)
 	edge.SetWeight(ei.Weight())
-
-	v.mutex.Unlock()
 
 	return nil
 }
@@ -216,6 +212,19 @@ func (v *AbstractVertex) FindAdjoin(vi VertexInterface) int {
 	}
 
 	return -1
+}
+
+// Get all edges
+func (v *AbstractVertex) Edges() (ei []EdgeInterface) {
+	defer v.mutex.RUnlock()
+	v.mutex.RLock()
+
+	for _, d := range v.edges.Data() {
+		edge := d.(EdgeInterface)
+		ei = append(ei, edge)
+	}
+
+	return ei
 }
 
 // Get all forward edges

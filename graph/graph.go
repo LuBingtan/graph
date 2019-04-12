@@ -35,7 +35,7 @@ type GraphInterface interface {
 	RemoveEdge(src, dst VertexInterface) error
 
 	/////// copy ///////
-	DeepCopy() GraphInterface
+	Clone() GraphInterface
 }
 
 /**********************************************************************************/
@@ -64,6 +64,7 @@ func NewGraph(name string) *AbstractGraph {
 func (g *AbstractGraph) SetName(n string) {
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
+
 	g.name = n
 }
 
@@ -71,6 +72,7 @@ func (g *AbstractGraph) SetName(n string) {
 func (g *AbstractGraph) Name() string {
 	defer g.mutex.RUnlock()
 	g.mutex.RLock()
+
 	return g.name
 }
 
@@ -97,8 +99,6 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 	if _, ok := g.verteces[dst.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
-
-	ei.SetType(BackwardEdge)
 
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
@@ -133,9 +133,10 @@ func (g *AbstractGraph) SetVertex(v VertexInterface) error {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", v.Name())
 	}
 
+	defer g.mutex.Unlock()
 	g.mutex.Lock()
+
 	g.verteces[v.Name()].SetData(v.Data())
-	g.mutex.Unlock()
 
 	return nil
 }
@@ -151,28 +152,36 @@ func (g *AbstractGraph) SetEdge(src, dst VertexInterface, ei EdgeInterface) erro
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
+	defer g.mutex.Unlock()
 	g.mutex.Lock()
+
 	src.SetEdge(dst, ei)
-	g.mutex.Unlock()
 
 	return nil
 }
 
 // remove a vertex in graph, and those verteces which point to this vertex will also remove it
 func (g *AbstractGraph) RemoveVertex(v VertexInterface) {
+	if v == nil {
+		panic("Input is null, pleae do check!")
+	}
+
 	defer g.mutex.Unlock()
+	g.mutex.Lock()
 
 	for _, src := range g.verteces {
 		v.RemoveAdjoin(src)
 	}
-
-	g.mutex.Lock()
 
 	delete(g.verteces, v.Name())
 }
 
 // remove a edge in graph which is from src verte to dst vertex
 func (g *AbstractGraph) RemoveEdge(src, dst VertexInterface) error {
+	if nil == src || nil == dst {
+		return fmt.Errorf("Input is null, pleae do check!")
+	}
+
 	if _, ok := g.verteces[src.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
 	}
@@ -181,16 +190,15 @@ func (g *AbstractGraph) RemoveEdge(src, dst VertexInterface) error {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
 	}
 
+	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
 	src.RemoveAdjoin(dst)
 
-	g.mutex.Unlock()
-
 	return nil
 }
 
-func (g *AbstractGraph) DeepCopy() GraphInterface {
+func (g *AbstractGraph) Clone() GraphInterface {
 	newG := NewGraph(g.name)
 	for _, v := range g.verteces {
 		newG.InsertVertex(v.Copy())

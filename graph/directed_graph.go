@@ -1,34 +1,26 @@
 package graph
 
-import "fmt"
+import (
+	"fmt"
+)
 
 /**********************************************************************************/
-// directed graph interface
+// directed graph struct
 /**********************************************************************************/
 
-// define for directed graph interface
-type UndirectedGraphInterface interface {
-	GraphInterface
+type DirectedGraph struct {
+	*AbstractGraph
 }
 
-type UndirectedGraph struct {
-	AbstractGraph
+func NewDirectedGraph(name string) *DirectedGraph {
+	return &DirectedGraph{
+		AbstractGraph: NewGraph(name),
+	}
 }
 
-// insert a new edge which is from src vertex to dst vertex
-func (g *UndirectedGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) error {
-	if _, ok := g.verteces[src.Name()]; !ok {
-		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
+func (g *DirectedGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) error {
+	if ei.Type() == UndirectedEdge {
+		return fmt.Errorf("Edge type(%s) wrong! Edge in directed graph must be backward or forward.", ei.Type())
 	}
-
-	if _, ok := g.verteces[dst.Name()]; !ok {
-		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
-	}
-
-	ei.SetType(UndirectedEdge)
-
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
-
-	return src.Adjoin(dst, ei)
+	return g.AbstractGraph.InsertEdge(src, dst, ei)
 }
