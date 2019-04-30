@@ -17,8 +17,10 @@ type GraphInterface interface {
 	/////// meta data ///////
 	// update
 	SetName(string)
+	SetType(GraphType)
 	// read
 	Name() string
+	Type() GraphType
 
 	/////// relation data ///////
 	// create
@@ -28,8 +30,7 @@ type GraphInterface interface {
 	GetVertex(name string) VertexInterface
 	Verteces() map[string]VertexInterface
 	// update
-	SetVertex(v VertexInterface) error
-	SetEdge(src, dst VertexInterface, ei EdgeInterface) error
+	UpdateVertex(v VertexInterface) error
 	// delete
 	RemoveVertex(VertexInterface)
 	RemoveEdge(src, dst VertexInterface) error
@@ -44,6 +45,7 @@ type GraphInterface interface {
 
 type AbstractGraph struct {
 	name     string
+	gType    GraphType
 	verteces map[string]VertexInterface
 	// mutex
 	mutex sync.RWMutex
@@ -68,12 +70,28 @@ func (g *AbstractGraph) SetName(n string) {
 	g.name = n
 }
 
+// update graph type
+func (g *AbstractGraph) SetType(t GraphType) {
+	defer g.mutex.Unlock()
+	g.mutex.Lock()
+
+	g.gType = t
+}
+
 // read graph name
 func (g *AbstractGraph) Name() string {
 	defer g.mutex.RUnlock()
 	g.mutex.RLock()
 
 	return g.name
+}
+
+// read graph type
+func (g *AbstractGraph) Type() GraphType {
+	defer g.mutex.Unlock()
+	g.mutex.Lock()
+
+	return g.gType
 }
 
 // insert a new vertex
@@ -103,7 +121,7 @@ func (g *AbstractGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface) e
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	return src.Adjoin(dst, ei)
+	return Adjoin(src, dst, ei)
 }
 
 // get a vertex by name
@@ -128,7 +146,7 @@ func (g *AbstractGraph) Verteces() map[string]VertexInterface {
 }
 
 // update a vertex with specified name, and return an error if the name not exist
-func (g *AbstractGraph) SetVertex(v VertexInterface) error {
+func (g *AbstractGraph) UpdateVertex(v VertexInterface) error {
 	if _, ok := g.verteces[v.Name()]; !ok {
 		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", v.Name())
 	}
@@ -137,25 +155,6 @@ func (g *AbstractGraph) SetVertex(v VertexInterface) error {
 	g.mutex.Lock()
 
 	g.verteces[v.Name()].SetData(v.Data())
-
-	return nil
-}
-
-// update a edge which is from src verte to dst vertex
-func (g *AbstractGraph) SetEdge(src, dst VertexInterface, ei EdgeInterface) error {
-
-	if _, ok := g.verteces[src.Name()]; !ok {
-		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", src.Name())
-	}
-
-	if _, ok := g.verteces[dst.Name()]; !ok {
-		return fmt.Errorf("vertex[name:%s] not exists, insert vertex first!", dst.Name())
-	}
-
-	defer g.mutex.Unlock()
-	g.mutex.Lock()
-
-	src.SetEdge(dst, ei)
 
 	return nil
 }
@@ -170,7 +169,7 @@ func (g *AbstractGraph) RemoveVertex(v VertexInterface) {
 	g.mutex.Lock()
 
 	for _, src := range g.verteces {
-		v.RemoveAdjoin(src)
+		RemoveAdjoin(v, src)
 	}
 
 	delete(g.verteces, v.Name())
@@ -193,7 +192,7 @@ func (g *AbstractGraph) RemoveEdge(src, dst VertexInterface) error {
 	defer g.mutex.Unlock()
 	g.mutex.Lock()
 
-	src.RemoveAdjoin(dst)
+	RemoveAdjoin(src, dst)
 
 	return nil
 }

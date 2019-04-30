@@ -24,3 +24,7 @@ func (g *UndirectedGraph) InsertEdge(src, dst VertexInterface, ei EdgeInterface)
 	}
 	return g.AbstractGraph.InsertEdge(src, dst, ei)
 }
+
+func (g *UndirectedGraph) InsertEdgeByName(srcName, dstName string, ei EdgeInterface) error {
+	return g.InsertEdge(g.GetVertex(srcName), g.GetVertex(dstName), ei)
+}

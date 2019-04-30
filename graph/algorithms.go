@@ -3,7 +3,7 @@ package graph
 import (
 	"fmt"
 
-	simpleSt "easyai/utils/simplestructure"
+	simpleSt "graph/simplestructure"
 )
 
 // Determine if a graph is acyclic

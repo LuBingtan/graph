@@ -2,10 +2,9 @@ package graph
 
 import (
 	"fmt"
-	"reflect"
 	"sync"
 
-	simpleSt "easyai/utils/simplestructure"
+	simpleSt "graph/simplestructure"
 )
 
 /**********************************************************************************/
@@ -16,6 +15,7 @@ import (
 type VertexType string
 
 // define for vertex interface
+// vertex contains edge
 type VertexInterface interface {
 	/////// meta data ///////
 	// update
@@ -27,22 +27,17 @@ type VertexInterface interface {
 
 	/////// relation data ///////
 	// update
-	Adjoin(dst VertexInterface, ei EdgeInterface) error
-	SetEdge(adj VertexInterface, ei EdgeInterface) error
+	InsertEdge(ei EdgeInterface)
 	// delete
-	RemoveAdjoin(VertexInterface)
+	RemoveEdge(endpoint VertexInterface, edgeType EdgeType) EdgeInterface
 	// read
-	FindAdjoin(VertexInterface) int
+	FindEdge(endpoint VertexInterface, edgeType EdgeType) EdgeInterface
+	// list
 	Edges() []EdgeInterface
 	EdgesForward() []EdgeInterface
 	EdgesBackward() []EdgeInterface
 	Indegree() int
 	Outdegree() int
-	// inner method, degree operation
-	incIndegree()
-	incOutdegree()
-	decOutdegree()
-	decIndegree()
 
 	/////// copy ///////
 	Copy() VertexInterface
@@ -102,115 +97,72 @@ func (v *AbstractVertex) Data() interface{} {
 	return v.data
 }
 
-// Insert adjacent vertex
-// If edge type is forward edge, add input vertex as forward vertex and increase indegree
-// If edge type is backward edge, add input vertex as backward vertex, and increase outdegree
-// When Adjoin is done, it will continue 'Adjoin' itself to the 'next' vertex
-func (v *AbstractVertex) Adjoin(next VertexInterface, ei EdgeInterface) error {
-	if v.FindAdjoin(next) != -1 {
-		return nil
-	}
-
-	var reverseEdgeType EdgeType
+func (v *AbstractVertex) InsertEdge(ei EdgeInterface) {
+	defer v.mutex.Unlock()
+	v.mutex.Lock()
 	switch ei.Type() {
 	case BackwardEdge:
 		v.incOutdegree()
-		ei.SetVertex(v, next)
-		reverseEdgeType = ForwardEdge
 	case ForwardEdge:
 		v.incIndegree()
-		ei.SetVertex(next, v)
-		reverseEdgeType = BackwardEdge
 	case UndirectedEdge:
 		v.incIndegree()
 		v.incOutdegree()
-		ei.SetVertex(v, next)
-		reverseEdgeType = UndirectedEdge
 	default:
-		return fmt.Errorf("Unknown type[%s].", ei.Type())
+		panic(fmt.Sprintf("Unknown type[%s].", ei.Type()))
 	}
-
-	v.mutex.Lock()
 
 	v.edges.Pushback(ei)
+}
 
+func (v *AbstractVertex) RemoveEdge(endpoint VertexInterface, edgeType EdgeType) EdgeInterface {
+	index := v.findEdge(endpoint, edgeType)
+
+	v.mutex.Lock()
+	e := v.edges.Remove(index)
 	v.mutex.Unlock()
 
-	reverseEdge := ei.Copy()
-	reverseEdge.SetType(reverseEdgeType)
-
-	return next.Adjoin(v, reverseEdge)
-}
-
-// Update edge
-// update an edge's inner data such as weight
-// the input vertex 'adj' is a adjacent vertex
-func (v *AbstractVertex) SetEdge(adj VertexInterface, ei EdgeInterface) error {
-	index := v.FindAdjoin(adj)
-	if index == -1 {
-		return fmt.Errorf("vertex(%v) not exists.", adj)
+	if nil == e {
+		return nil
 	}
 
-	// update edge's weight
-	defer v.mutex.Unlock()
-	v.mutex.Lock()
-
-	edgeI := v.edges.At(index)
-	edge := edgeI.(EdgeInterface)
-	edge.SetWeight(ei.Weight())
-
-	return nil
-}
-
-// Delete adjacent vertex
-// If not find target vertex, do nothing
-// When find target vertex:
-// if it's a backward vertex, decrease of self's outdegree and target's indegree
-// if it's a forward vertex, decrease of self's indegree and target's outdegree
-func (v *AbstractVertex) RemoveAdjoin(adj VertexInterface) {
-	index := v.FindAdjoin(adj)
-	if index == -1 {
-		return
-	}
-
-	// remove edge
-	v.mutex.Lock()
-
-	edge := v.edges.At(index).(EdgeInterface)
-
-	v.edges.Remove(index)
-
-	// decrease degree
-	if edge.Type() == ForwardEdge {
+	switch edgeType {
+	case BackwardEdge:
+		v.decOutdegree()
+	case ForwardEdge:
 		v.decIndegree()
-	} else {
+	case UndirectedEdge:
+		v.decIndegree()
 		v.decOutdegree()
 	}
 
-	v.mutex.Unlock()
-
-	// let adjacent vertex remove this vertex
-	adj.RemoveAdjoin(v)
+	return e.(EdgeInterface)
 }
 
-// Find adjacent vertex and return its binding edge's index
-// If not find target vertex, then return -1
-// If target vertex is equal with self, return -1
-func (v *AbstractVertex) FindAdjoin(vi VertexInterface) int {
-	defer v.mutex.RUnlock()
-	v.mutex.RLock()
-
-	if reflect.DeepEqual(v, vi) {
-		return -1
+// Update edge
+func (v *AbstractVertex) FindEdge(endpoint VertexInterface, edgeType EdgeType) EdgeInterface {
+	index := v.findEdge(endpoint, edgeType)
+	if index == -1 {
+		return nil
 	}
 
-	for i, d := range v.edges.Data() {
-		e := d.(EdgeInterface)
-		if reflect.DeepEqual(e.From(), vi) || reflect.DeepEqual(e.To(), vi) {
+	e := v.edges.At(index)
+	if e == nil {
+		return nil
+	}
+
+	return e.(EdgeInterface)
+}
+
+func (v *AbstractVertex) findEdge(endpoint VertexInterface, edgeType EdgeType) int {
+	for i, e := range v.edges.Data() {
+		edge := e.(EdgeInterface)
+		if (edge.From().Name() == endpoint.Name() ||
+		edge.To().Name() == endpoint.Name()) &&
+		edge.Type() == edgeType {
 			return i
 		}
 	}
-
 	return -1
 }
 
@@ -299,4 +251,67 @@ func (v *AbstractVertex) Copy() VertexInterface {
 		name: v.name,
 		data: v.data,
 	}
+}
+
+/**********************************************************************************/
+// vertex interface function
+/**********************************************************************************/
+
+// Insert adjacent vertex
+// If edge type is forward edge, add input vertex as forward vertex and increase indegree
+// If edge type is backward edge, add input vertex as backward vertex, and increase outdegree
+// When Adjoin is done, it will continue 'Adjoin' itself to the 'next' vertex
+func Adjoin(from, to VertexInterface, ei EdgeInterface) error {
+	edge := from.FindEdge(to, ei.Type())
+	if edge != nil {
+		return nil
+	}
+
+	reverseEdge := ei.Copy()
+	switch ei.Type() {
+	case BackwardEdge:
+		ei.SetVertex(from, to)
+		reverseEdge.SetVertex(from, to)
+		reverseEdge.SetType(ForwardEdge)
+	case ForwardEdge:
+		ei.SetVertex(to, from)
+		reverseEdge.SetVertex(to, from)
+		reverseEdge.SetType(BackwardEdge)
+	case UndirectedEdge:
+		ei.SetVertex(from, to)
+		reverseEdge.SetVertex(from, to)
+		reverseEdge.SetType(UndirectedEdge)
+	default:
+		return fmt.Errorf("Unknown type[%s].", ei.Type())
+	}
+
+	from.InsertEdge(ei)
+	to.InsertEdge(reverseEdge)
+
+	return nil
+}
+
+// Delete adjacent vertex
+// If not find target vertex, do nothing
+// When find target vertex:
+// if it's a backward vertex, decrease of self's outdegree and target's indegree
+// if it's a forward vertex, decrease of self's indegree and target's outdegree
+func RemoveAdjoin(from, to VertexInterface) error {
+	edgeTypeList := []EdgeType{BackwardEdge, ForwardEdge, UndirectedEdge}
+	for _, edgeType := range edgeTypeList {
+		fmt.Println(edgeType)
+		var reverseEdgeType EdgeType
+		switch edgeType {
+		case BackwardEdge:
+			reverseEdgeType = ForwardEdge
+		case ForwardEdge:
+			reverseEdgeType = BackwardEdge
+		case UndirectedEdge:
+			reverseEdgeType = UndirectedEdge
+		}
+		from.RemoveEdge(to, edgeType)
+		to.RemoveEdge(from, reverseEdgeType)
+	}
+
+	return nil
 }
